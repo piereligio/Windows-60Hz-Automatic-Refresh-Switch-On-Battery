@@ -19,33 +19,6 @@ function Set-PowerRefreshRate {
     }
 
 
-	# Select the active monitor
-	$activeMonitor = Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorBasicDisplayParams | Where-Object { $_.Active -eq $true }
-	
-	# Get the instance name of the active monitor
-	$instanceName = $activeMonitor.InstanceName
-	
-	# Get the supported source modes for the active monitor
-	$supportedModes = Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorListedSupportedSourceModes | Where-Object { $_.InstanceName -eq $instanceName }
-	
-	# Variable to hold the highest refresh rate
-	$maxRefreshRate = 0
-	
-	# Iterate through the supported modes to find the highest refresh rate
-	foreach ($mode in $supportedModes.MonitorSourceModes) {
-		# Calculate refresh rate
-		$refreshRate = [math]::Round($mode.VerticalRefreshRateNumerator / $mode.VerticalRefreshRateDenominator)
-		
-		# Compare with maxRefreshRate and update if higher
-		if ($refreshRate -gt $maxRefreshRate) {
-			$maxRefreshRate = $refreshRate
-		}
-	}
-	
-	# Output the highest refresh rate
-	Write-Host "Highest Refresh Rate for Current Resolution: $maxRefreshRate Hz"
-
-
     # Get battery status
     $batteryStatus = (Get-WmiObject -Class Win32_Battery).BatteryStatus
 
@@ -57,6 +30,31 @@ function Set-PowerRefreshRate {
         Start-Process $QResPath.Source -ArgumentList "/r:60"
     } else {
         # Plugged in
+		
+		# Select the active monitor
+		$activeMonitor = Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorBasicDisplayParams | Where-Object { $_.Active -eq $true }
+		
+		# Get the instance name of the active monitor
+		$instanceName = $activeMonitor.InstanceName
+		
+		# Get the supported source modes for the active monitor
+		$supportedModes = Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorListedSupportedSourceModes | Where-Object { $_.InstanceName -eq $instanceName }
+		
+		# Variable to hold the highest refresh rate
+		$maxRefreshRate = 0
+		
+		# Iterate through the supported modes to find the highest refresh rate
+		foreach ($mode in $supportedModes.MonitorSourceModes) {
+			# Calculate refresh rate
+			$refreshRate = [math]::Round($mode.VerticalRefreshRateNumerator / $mode.VerticalRefreshRateDenominator)
+			
+			# Compare with maxRefreshRate and update if higher
+			if ($refreshRate -gt $maxRefreshRate) {
+				$maxRefreshRate = $refreshRate
+			}
+		}
+		# Output the highest refresh rate
+		Write-Host "Highest Refresh Rate for Current Resolution: $maxRefreshRate Hz"
         $refreshRateToSet = $maxRefreshRate
         "$([DateTime]::Now) Switched Monitor to $refreshRateToSet Hz"
         Write-Host "Switched Monitor to $refreshRateToSet Hz"
